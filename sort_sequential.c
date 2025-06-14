@@ -60,7 +60,6 @@ void mergeSort(float *arr, int l, int r) {
 int main() {
     float *array = (float*)malloc(N * sizeof(float));
     
-    // Инициализация массива
     for (int i = 0; i < N; i++) {
         array[i] = (float)rand() / RAND_MAX;
     }
@@ -72,9 +71,7 @@ int main() {
     clock_t end = clock();
     double time = (double)(end - start) / CLOCKS_PER_SEC;
     
-    printf("First element: %f\n", array[0]);
-    printf("Last element: %f\n", array[N-1]);
-    printf("Time: %f seconds\n", time);
+    printf("Время: %f seconds\n", time);
     
     free(array);
     return 0;
