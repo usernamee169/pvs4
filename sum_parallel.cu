@@ -32,7 +32,6 @@ int main() {
     float *h_sum = (float*)malloc(((N + BLOCK_SIZE - 1) / BLOCK_SIZE) * sizeof(float));
     float finalSum = 0.0f;
     
-    // Инициализация массива
     for (int i = 0; i < N; i++) {
         h_array[i] = (float)rand() / RAND_MAX;
     }
