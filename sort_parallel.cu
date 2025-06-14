@@ -6,8 +6,6 @@
 #define N2 524288   // 2^19
 #define N3 1048576  // 2^20
 
-#define THREADS 256
-
 __device__ void swap(float &a, float &b) {
     float t = a;
     a = b;
@@ -32,10 +30,11 @@ __global__ void bitonicSortStep(float *devValues, int j, int k) {
     }
 }
 
-void testSort(int size) {
+void testSort(int size, int threadsPerBlock) {
     float *h_values = (float*)malloc(size * sizeof(float));
     float *d_values;
     
+    // Initialize array with random values
     for (int i = 0; i < size; i++) {
         h_values[i] = (float)rand() / RAND_MAX;
     }
@@ -47,14 +46,14 @@ void testSort(int size) {
     cudaMalloc(&d_values, size * sizeof(float));
     cudaMemcpy(d_values, h_values, size * sizeof(float), cudaMemcpyHostToDevice);
     
-    int blocks = (size + THREADS - 1) / THREADS;
+    int blocks = (size + threadsPerBlock - 1) / threadsPerBlock;
     
     cudaEventRecord(start);
     
     int j, k;
     for (k = 2; k <= size; k <<= 1) {
         for (j = k >> 1; j > 0; j >>= 1) {
-            bitonicSortStep<<<blocks, THREADS>>>(d_values, j, k);
+            bitonicSortStep<<<blocks, threadsPerBlock>>>(d_values, j, k);
         }
     }
     
@@ -66,6 +65,7 @@ void testSort(int size) {
     float milliseconds = 0;
     cudaEventElapsedTime(&milliseconds, start, stop);
     
+    // Verify sorting
     int sorted = 1;
     for (int i = 0; i < size - 1; i++) {
         if (h_values[i] > h_values[i+1]) {
@@ -81,13 +81,21 @@ void testSort(int size) {
     free(h_values);
 }
 
-int main() {
+int main(int argc, char **argv) {
+    if (argc != 2) {
+        return 1;
+    }
+    
+    int threadsPerBlock = atoi(argv[1]);
+    if (threadsPerBlock <= 0 || threadsPerBlock > 1024) {
+        return 1;
+    }
+
     srand(time(NULL));
     
-    printf("Параллельная сортировка:\n");
-    testSort(N1);
-    testSort(N2);
-    testSort(N3);
+    testSort(N1, threadsPerBlock);
+    testSort(N2, threadsPerBlock);
+    testSort(N3, threadsPerBlock);
     
     return 0;
 }
