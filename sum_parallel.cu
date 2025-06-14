@@ -3,10 +3,9 @@
 #include <cuda_runtime.h>
 
 #define N 1000000
-#define BLOCK_SIZE 256
 
-__global__ void sumKernel(float *input, float *output, int size) {
-    __shared__ float sharedData[BLOCK_SIZE];
+__global__ void sumKernel(float *input, float *output, int size, int threadsPerBlock) {
+    extern __shared__ float sharedData[];
     
     int tid = threadIdx.x;
     int i = blockIdx.x * blockDim.x + threadIdx.x;
@@ -14,7 +13,7 @@ __global__ void sumKernel(float *input, float *output, int size) {
     sharedData[tid] = (i < size) ? input[i] : 0.0f;
     __syncthreads();
     
-    for (int s = blockDim.x / 2; s > 0; s >>= 1) {
+    for (int s = threadsPerBlock/2; s > 0; s >>= 1) {
         if (tid < s) {
             sharedData[tid] += sharedData[tid + s];
         }
@@ -26,12 +25,23 @@ __global__ void sumKernel(float *input, float *output, int size) {
     }
 }
 
-int main() {
+int main(int argc, char **argv) {
+    if (argc != 2) {
+        return 1;
+    }
+    
+    int threadsPerBlock = atoi(argv[1]);
+    if (threadsPerBlock <= 0 || threadsPerBlock > 1024) {
+        return 1;
+    }
+
+    
     float *h_array = (float*)malloc(N * sizeof(float));
     float *d_array, *d_sum;
-    float *h_sum = (float*)malloc(((N + BLOCK_SIZE - 1) / BLOCK_SIZE) * sizeof(float));
+    float *h_sum = (float*)malloc(((N + threadsPerBlock - 1) / threadsPerBlock) * sizeof(float));
     float finalSum = 0.0f;
     
+    // Initialize array with random values
     for (int i = 0; i < N; i++) {
         h_array[i] = (float)rand() / RAND_MAX;
     }
@@ -41,20 +51,19 @@ int main() {
     cudaEventCreate(&stop);
     
     cudaMalloc(&d_array, N * sizeof(float));
-    cudaMalloc(&d_sum, ((N + BLOCK_SIZE - 1) / BLOCK_SIZE) * sizeof(float));
+    cudaMalloc(&d_sum, ((N + threadsPerBlock - 1) / threadsPerBlock) * sizeof(float));
     
     cudaMemcpy(d_array, h_array, N * sizeof(float), cudaMemcpyHostToDevice);
-    
-    dim3 block(BLOCK_SIZE);
+
+    dim3 block(threadsPerBlock);
     dim3 grid((N + block.x - 1) / block.x);
     
     cudaEventRecord(start);
     
-    sumKernel<<<grid, block>>>(d_array, d_sum, N);
+    sumKernel<<<grid, block, threadsPerBlock * sizeof(float)>>>(d_array, d_sum, N, threadsPerBlock);
     
     cudaMemcpy(h_sum, d_sum, grid.x * sizeof(float), cudaMemcpyDeviceToHost);
     
-    // Финальное суммирование на CPU
     for (int i = 0; i < grid.x; i++) {
         finalSum += h_sum[i];
     }
@@ -65,7 +74,8 @@ int main() {
     float milliseconds = 0;
     cudaEventElapsedTime(&milliseconds, start, stop);
     
-    printf("Время: %f seconds\n", milliseconds / 1000.0f);
+    printf("Размер массива: %d\n", N);
+    printf("Время: %f seconds\n\n", milliseconds / 1000.0f);
     
     cudaFree(d_array);
     cudaFree(d_sum);
