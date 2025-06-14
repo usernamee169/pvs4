@@ -1,34 +1,13 @@
 #!/bin/bash
-#BSUB -J sequential
-#BSUB -o output_%J.out
-#BSUB -e error_%J.err
+#BSUB -J sum_seq
+#BSUB -q normal
 #BSUB -n 1
-#BSUB -R "span[ptile=1]"
-#BSUB -W 00:10
+#BSUB -o sum_seq.out
+#BSUB -e sum_seq.err
 
-# Загрузка необходимых модулей
 module load gcc
 
-# Компиляция программ
-gcc sum_sequential.c -o sum_sequential -O3
-gcc sort_sequential.c -o sort_sequential -O3
-gcc array_ops_sequential.c -o array_ops_sequential -O3
-gcc matrix_ops_sequential.c -o matrix_ops_sequential -O3
-
-# Размеры массивов для тестирования
-SIZES=(100000 500000 1000000)
-
-# Запуск тестов
-for size in "${SIZES[@]}"; do
-    echo "Running sum_sequential with size $size"
-    ./sum_sequential $size
-    
-    echo "Running sort_sequential with size $size"
-    ./sort_sequential $size
-    
-    echo "Running array_ops_sequential with size $size"
-    ./array_ops_sequential $size
-    
-    echo "Running matrix_ops_sequential with size $size"
-    ./matrix_ops_sequential $size
-done
+./sum_sequential
+./sort_sequential
+./array_ops_sequential
+./matrix_ops_sequential
