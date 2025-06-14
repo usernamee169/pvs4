@@ -65,7 +65,6 @@ void testSort(int size, int threadsPerBlock) {
     float milliseconds = 0;
     cudaEventElapsedTime(&milliseconds, start, stop);
     
-    // Verify sorting
     int sorted = 1;
     for (int i = 0; i < size - 1; i++) {
         if (h_values[i] > h_values[i+1]) {
