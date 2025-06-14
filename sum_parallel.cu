@@ -2,67 +2,77 @@
 #include <stdlib.h>
 #include <cuda_runtime.h>
 
-__global__ void sumArray(float *array, float *result, int N) {
-    int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    if (idx < N) {
-        atomicAdd(result, array[idx]);
+#define N 1000000
+#define BLOCK_SIZE 256
+
+__global__ void sumKernel(float *input, float *output, int size) {
+    __shared__ float sharedData[BLOCK_SIZE];
+    
+    int tid = threadIdx.x;
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    
+    sharedData[tid] = (i < size) ? input[i] : 0.0f;
+    __syncthreads();
+    
+    for (int s = blockDim.x / 2; s > 0; s >>= 1) {
+        if (tid < s) {
+            sharedData[tid] += sharedData[tid + s];
+        }
+        __syncthreads();
+    }
+    
+    if (tid == 0) {
+        output[blockIdx.x] = sharedData[0];
     }
 }
 
-int main(int argc, char *argv[]) {
-    if (argc != 2) {
-        printf("Usage: %s <array_size>\n", argv[0]);
-        return 1;
-    }
-
-    int N = atoi(argv[1]);
-    if (N <= 0) {
-        printf("Array size must be positive\n");
-        return 1;
-    }
-
-    float *h_array = (float *)malloc(N * sizeof(float));
-    float *d_array, *d_result;
-    float h_result = 0.0f;
+int main() {
+    float *h_array = (float*)malloc(N * sizeof(float));
+    float *d_array, *d_sum;
+    float *h_sum = (float*)malloc(((N + BLOCK_SIZE - 1) / BLOCK_SIZE) * sizeof(float));
+    float finalSum = 0.0f;
     
     // Инициализация массива
-    srand(time(NULL));
     for (int i = 0; i < N; i++) {
         h_array[i] = (float)rand() / RAND_MAX;
     }
-
-    // Выделение памяти на устройстве
-    cudaMalloc(&d_array, N * sizeof(float));
-    cudaMalloc(&d_result, sizeof(float));
-    cudaMemcpy(d_array, h_array, N * sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_result, &h_result, sizeof(float), cudaMemcpyHostToDevice);
-
-    // Запуск ядра
-    int blockSize = 256;
-    int numBlocks = (N + blockSize - 1) / blockSize;
     
     cudaEvent_t start, stop;
     cudaEventCreate(&start);
     cudaEventCreate(&stop);
+    
+    cudaMalloc(&d_array, N * sizeof(float));
+    cudaMalloc(&d_sum, ((N + BLOCK_SIZE - 1) / BLOCK_SIZE) * sizeof(float));
+    
+    cudaMemcpy(d_array, h_array, N * sizeof(float), cudaMemcpyHostToDevice);
+    
+    dim3 block(BLOCK_SIZE);
+    dim3 grid((N + block.x - 1) / block.x);
+    
     cudaEventRecord(start);
-
-    sumArray<<<numBlocks, blockSize>>>(d_array, d_result, N);
-
+    
+    sumKernel<<<grid, block>>>(d_array, d_sum, N);
+    
+    cudaMemcpy(h_sum, d_sum, grid.x * sizeof(float), cudaMemcpyDeviceToHost);
+    
+    // Финальное суммирование на CPU
+    for (int i = 0; i < grid.x; i++) {
+        finalSum += h_sum[i];
+    }
+    
     cudaEventRecord(stop);
     cudaEventSynchronize(stop);
+    
     float milliseconds = 0;
     cudaEventElapsedTime(&milliseconds, start, stop);
-
-    // Копирование результата обратно
-    cudaMemcpy(&h_result, d_result, sizeof(float), cudaMemcpyDeviceToHost);
-
-    printf("Parallel sum: %f\n", h_result);
-    printf("Time: %f seconds\n", milliseconds / 1000);
-
-    // Освобождение памяти
+    
+    printf("Sum: %f\n", finalSum);
+    printf("Time: %f seconds\n", milliseconds / 1000.0f);
+    
     cudaFree(d_array);
-    cudaFree(d_result);
+    cudaFree(d_sum);
     free(h_array);
-
+    free(h_sum);
+    
     return 0;
 }
