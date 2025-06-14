@@ -34,7 +34,7 @@ void testSort(int size, int threadsPerBlock) {
     float *h_values = (float*)malloc(size * sizeof(float));
     float *d_values;
     
-    // Initialize array with random values
+
     for (int i = 0; i < size; i++) {
         h_values[i] = (float)rand() / RAND_MAX;
     }
