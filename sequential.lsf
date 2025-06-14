@@ -1,11 +1,10 @@
 #!/bin/bash
-#BSUB -J sum_seq
-#BSUB -q normal
-#BSUB -n 1
-#BSUB -o sum_seq.out
-#BSUB -e sum_seq.err
-
-module load gcc
+#BSUB -J seq
+#BSUB -p seq
+#BSUB -W 00:50
+#BSUB -n 2
+#BSUB -o seq.out
+#BSUB -e seq.err
 
 ./sum_sequential
 ./sort_sequential
