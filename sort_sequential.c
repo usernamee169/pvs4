@@ -90,7 +90,7 @@ void testSort(int size) {
 int main() {
     srand(time(NULL));
     
-    printf("Сортировка:\n");
+    printf("Последовательная ортировка:\n");
     testSort(N1);
     testSort(N2);
     testSort(N3);
