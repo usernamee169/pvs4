@@ -2,87 +2,76 @@
 #include <stdlib.h>
 #include <cuda_runtime.h>
 
-__global__ void arrayOperations(float *A, float *B, float *add, float *sub, float *mul, float *div, int N) {
-    int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    if (idx < N) {
-        add[idx] = A[idx] + B[idx];
-        sub[idx] = A[idx] - B[idx];
-        mul[idx] = A[idx] * B[idx];
-        div[idx] = A[idx] / B[idx];
+#define N 1000000
+#define BLOCK_SIZE 256
+
+__global__ void arrayOpsKernel(float *a, float *b, float *add, float *sub, float *mul, float *div, int size) {
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    
+    if (i < size) {
+        add[i] = a[i] + b[i];
+        sub[i] = a[i] - b[i];
+        mul[i] = a[i] * b[i];
+        div[i] = a[i] / b[i];
     }
 }
 
-int main(int argc, char *argv[]) {
-    if (argc != 2) {
-        printf("Usage: %s <array_size>\n", argv[0]);
-        return 1;
-    }
-
-    int N = atoi(argv[1]);
-    if (N <= 0) {
-        printf("Array size must be positive\n");
-        return 1;
-    }
-
-    float *h_A = (float *)malloc(N * sizeof(float));
-    float *h_B = (float *)malloc(N * sizeof(float));
-    float *h_add = (float *)malloc(N * sizeof(float));
-    float *h_sub = (float *)malloc(N * sizeof(float));
-    float *h_mul = (float *)malloc(N * sizeof(float));
-    float *h_div = (float *)malloc(N * sizeof(float));
+int main() {
+    float *h_a = (float*)malloc(N * sizeof(float));
+    float *h_b = (float*)malloc(N * sizeof(float));
+    float *h_add = (float*)malloc(N * sizeof(float));
+    float *h_sub = (float*)malloc(N * sizeof(float));
+    float *h_mul = (float*)malloc(N * sizeof(float));
+    float *h_div = (float*)malloc(N * sizeof(float));
     
-    float *d_A, *d_B, *d_add, *d_sub, *d_mul, *d_div;
-
-    srand(time(NULL));
+    float *d_a, *d_b, *d_add, *d_sub, *d_mul, *d_div;
+    
+    // Инициализация массивов
     for (int i = 0; i < N; i++) {
-        h_A[i] = (float)rand() / RAND_MAX;
-        h_B[i] = (float)rand() / RAND_MAX + 0.1f;
+        h_a[i] = (float)rand() / RAND_MAX + 0.1f;
+        h_b[i] = (float)rand() / RAND_MAX + 0.1f;
     }
-
-    cudaMalloc(&d_A, N * sizeof(float));
-    cudaMalloc(&d_B, N * sizeof(float));
+    
+    cudaEvent_t start, stop;
+    cudaEventCreate(&start);
+    cudaEventCreate(&stop);
+    
+    cudaMalloc(&d_a, N * sizeof(float));
+    cudaMalloc(&d_b, N * sizeof(float));
     cudaMalloc(&d_add, N * sizeof(float));
     cudaMalloc(&d_sub, N * sizeof(float));
     cudaMalloc(&d_mul, N * sizeof(float));
     cudaMalloc(&d_div, N * sizeof(float));
-
-    cudaMemcpy(d_A, h_A, N * sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_B, h_B, N * sizeof(float), cudaMemcpyHostToDevice);
-
-    int blockSize = 256;
-    int numBlocks = (N + blockSize - 1) / blockSize;
-
-    cudaEvent_t start, stop;
-    cudaEventCreate(&start);
-    cudaEventCreate(&stop);
+    
+    cudaMemcpy(d_a, h_a, N * sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_b, h_b, N * sizeof(float), cudaMemcpyHostToDevice);
+    
+    dim3 block(BLOCK_SIZE);
+    dim3 grid((N + block.x - 1) / block.x);
+    
     cudaEventRecord(start);
-
-    arrayOperations<<<numBlocks, blockSize>>>(d_A, d_B, d_add, d_sub, d_mul, d_div, N);
-
-    cudaEventRecord(stop);
-    cudaEventSynchronize(stop);
-    float milliseconds = 0;
-    cudaEventElapsedTime(&milliseconds, start, stop);
-
+    
+    arrayOpsKernel<<<grid, block>>>(d_a, d_b, d_add, d_sub, d_mul, d_div, N);
+    
     cudaMemcpy(h_add, d_add, N * sizeof(float), cudaMemcpyDeviceToHost);
     cudaMemcpy(h_sub, d_sub, N * sizeof(float), cudaMemcpyDeviceToHost);
     cudaMemcpy(h_mul, d_mul, N * sizeof(float), cudaMemcpyDeviceToHost);
     cudaMemcpy(h_div, d_div, N * sizeof(float), cudaMemcpyDeviceToHost);
-
-    printf("Parallel array operations completed\n");
-    printf("Time: %f seconds\n", milliseconds / 1000);
-
-    // Пример вывода первых 5 элементов
-    printf("Sample results (first 5 elements):\n");
-    for (int i = 0; i < 5 && i < N; i++) {
-        printf("%f + %f = %f\n", h_A[i], h_B[i], h_add[i]);
-        printf("%f - %f = %f\n", h_A[i], h_B[i], h_sub[i]);
-        printf("%f * %f = %f\n", h_A[i], h_B[i], h_mul[i]);
-        printf("%f / %f = %f\n", h_A[i], h_B[i], h_div[i]);
-    }
-
-    cudaFree(d_A); cudaFree(d_B); cudaFree(d_add); cudaFree(d_sub); cudaFree(d_mul); cudaFree(d_div);
-    free(h_A); free(h_B); free(h_add); free(h_sub); free(h_mul); free(h_div);
-
+    
+    cudaEventRecord(stop);
+    cudaEventSynchronize(stop);
+    
+    float milliseconds = 0;
+    cudaEventElapsedTime(&milliseconds, start, stop);
+    
+    printf("First add result: %f\n", h_add[0]);
+    printf("First sub result: %f\n", h_sub[0]);
+    printf("First mul result: %f\n", h_mul[0]);
+    printf("First div result: %f\n", h_div[0]);
+    printf("Time: %f seconds\n", milliseconds / 1000.0f);
+    
+    cudaFree(d_a); cudaFree(d_b); cudaFree(d_add); cudaFree(d_sub); cudaFree(d_mul); cudaFree(d_div);
+    free(h_a); free(h_b); free(h_add); free(h_sub); free(h_mul); free(h_div);
+    
     return 0;
 }
