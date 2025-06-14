@@ -65,8 +65,7 @@ int main() {
     float milliseconds = 0;
     cudaEventElapsedTime(&milliseconds, start, stop);
     
-    printf("Sum: %f\n", finalSum);
-    printf("Time: %f seconds\n", milliseconds / 1000.0f);
+    printf("Время: %f seconds\n", milliseconds / 1000.0f);
     
     cudaFree(d_array);
     cudaFree(d_sum);
