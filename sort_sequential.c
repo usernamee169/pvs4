@@ -2,7 +2,9 @@
 #include <stdlib.h>
 #include <time.h>
 
-#define N 1000000
+#define N1 100000
+#define N2 500000
+#define N3 1000000
 
 void merge(float *arr, int l, int m, int r) {
     int i, j, k;
@@ -57,22 +59,41 @@ void mergeSort(float *arr, int l, int r) {
     }
 }
 
-int main() {
-    float *array = (float*)malloc(N * sizeof(float));
+void testSort(int size) {
+    float *array = (float*)malloc(size * sizeof(float));
     
-    for (int i = 0; i < N; i++) {
+    for (int i = 0; i < size; i++) {
         array[i] = (float)rand() / RAND_MAX;
     }
     
     clock_t start = clock();
     
-    mergeSort(array, 0, N - 1);
+    mergeSort(array, 0, size - 1);
     
     clock_t end = clock();
     double time = (double)(end - start) / CLOCKS_PER_SEC;
     
-    printf("Время: %f seconds\n", time);
+    int sorted = 1;
+    for (int i = 0; i < size - 1; i++) {
+        if (array[i] > array[i+1]) {
+            sorted = 0;
+            break;
+        }
+    }
+    
+    printf("Размер массива: %d\n", size);
+    printf("Время: %f seconds\n\n", time);
     
     free(array);
+}
+
+int main() {
+    srand(time(NULL));
+    
+    printf("Сортировка:\n");
+    testSort(N1);
+    testSort(N2);
+    testSort(N3);
+    
     return 0;
 }
