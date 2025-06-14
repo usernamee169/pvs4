@@ -41,7 +41,6 @@ int main(int argc, char **argv) {
     float *h_sum = (float*)malloc(((N + threadsPerBlock - 1) / threadsPerBlock) * sizeof(float));
     float finalSum = 0.0f;
     
-    // Initialize array with random values
     for (int i = 0; i < N; i++) {
         h_array[i] = (float)rand() / RAND_MAX;
     }
