@@ -31,11 +31,7 @@ int main() {
     clock_t end = clock();
     double time = (double)(end - start) / CLOCKS_PER_SEC;
     
-    printf("First add result: %f\n", add[0]);
-    printf("First sub result: %f\n", sub[0]);
-    printf("First mul result: %f\n", mul[0]);
-    printf("First div result: %f\n", div[0]);
-    printf("Time: %f seconds\n", time);
+    printf("Время: %f seconds\n", time);
     
     free(a); free(b); free(add); free(sub); free(mul); free(div);
     return 0;
