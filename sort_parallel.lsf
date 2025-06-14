@@ -1,0 +1,14 @@
+#!/bin/bash
+#BSUB -J bitonic_variants
+#BSUB -q gpu
+#BSUB -n 1
+#BSUB -gpu "num=1:mode=exclusive_process"
+#BSUB -o bitonic_variants.out
+#BSUB -e bitonic_variants.err
+
+module load cuda/11.4
+
+echo "Параллельная сортировка:"
+for threads in 32 64 128 256 512; do
+    ./sort_parallel $threads
+done
