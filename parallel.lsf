@@ -1,0 +1,18 @@
+#!/bin/bash
+#BSUB -J parallel_sum
+#BSUB -o output.%J
+#BSUB -e error.%J
+#BSUB -n 1
+#BSUB -R "span[ptile=1]"
+#BSUB -q gpu
+#BSUB -W 00:10
+#BSUB -gpu "num=1:mode=shared"
+
+module load cuda
+
+# Запуск с разными размерами массивов
+for size in 100000 1000000 10000000; do
+    echo "Running with size $size"
+    ./sum_parallel $size
+    echo "---------------------------------"
+done
