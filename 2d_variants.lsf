@@ -1,0 +1,16 @@
+#!/bin/bash
+#BSUB -J cuda_2d_variants
+#BSUB -q gpu
+#BSUB -n 1
+#BSUB -gpu "num=1:mode=exclusive_process"
+#BSUB -o cuda_2d_variants.out
+#BSUB -e cuda_2d_variants.err
+
+module load cuda/11.4
+
+echo "Матричные операции:"
+./matrix_ops_parallel 16 16
+./matrix_ops_parallel 32 8
+./matrix_ops_parallel 8 32
+./matrix_ops_parallel 16 8
+./matrix_ops_parallel 8 16
