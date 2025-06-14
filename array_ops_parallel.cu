@@ -3,20 +3,30 @@
 #include <cuda_runtime.h>
 
 #define N 1000000
-#define BLOCK_SIZE 256
 
-__global__ void arrayOpsKernel(float *a, float *b, float *add, float *sub, float *mul, float *div, int size) {
+__global__ void arrayOpsKernel(float *a, float *b, float *add, float *sub, 
+                              float *mul, float *div, int size) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     
     if (i < size) {
         add[i] = a[i] + b[i];
         sub[i] = a[i] - b[i];
         mul[i] = a[i] * b[i];
-        div[i] = a[i] / b[i];
+        div[i] = a[i] / (b[i] + 0.0001f);
     }
 }
 
-int main() {
+int main(int argc, char **argv) {
+    if (argc != 2) {
+        return 1;
+    }
+    
+    int threadsPerBlock = atoi(argv[1]);
+    if (threadsPerBlock <= 0 || threadsPerBlock > 1024) {
+        return 1;
+    }
+
+    
     float *h_a = (float*)malloc(N * sizeof(float));
     float *h_b = (float*)malloc(N * sizeof(float));
     float *h_add = (float*)malloc(N * sizeof(float));
@@ -27,8 +37,8 @@ int main() {
     float *d_a, *d_b, *d_add, *d_sub, *d_mul, *d_div;
     
     for (int i = 0; i < N; i++) {
-        h_a[i] = (float)rand() / RAND_MAX + 0.1f;
-        h_b[i] = (float)rand() / RAND_MAX + 0.1f;
+        h_a[i] = (float)rand() / RAND_MAX;
+        h_b[i] = (float)rand() / RAND_MAX;
     }
     
     cudaEvent_t start, stop;
@@ -45,7 +55,7 @@ int main() {
     cudaMemcpy(d_a, h_a, N * sizeof(float), cudaMemcpyHostToDevice);
     cudaMemcpy(d_b, h_b, N * sizeof(float), cudaMemcpyHostToDevice);
     
-    dim3 block(BLOCK_SIZE);
+    dim3 block(threadsPerBlock);
     dim3 grid((N + block.x - 1) / block.x);
     
     cudaEventRecord(start);
@@ -63,9 +73,11 @@ int main() {
     float milliseconds = 0;
     cudaEventElapsedTime(&milliseconds, start, stop);
     
-    printf("Время: %f seconds\n", milliseconds / 1000.0f);
-    
-    cudaFree(d_a); cudaFree(d_b); cudaFree(d_add); cudaFree(d_sub); cudaFree(d_mul); cudaFree(d_div);
+    printf("Размер массивов: %d\n", N);
+    printf("Время: %f seconds\n\n", milliseconds / 1000.0f);
+
+    cudaFree(d_a); cudaFree(d_b); cudaFree(d_add); 
+    cudaFree(d_sub); cudaFree(d_mul); cudaFree(d_div);
     free(h_a); free(h_b); free(h_add); free(h_sub); free(h_mul); free(h_div);
     
     return 0;
