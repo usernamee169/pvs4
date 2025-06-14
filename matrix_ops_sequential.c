@@ -14,15 +14,13 @@ int main() {
     float *mul = (float*)malloc(N * sizeof(float));
     float *div = (float*)malloc(N * sizeof(float));
     
-    // Инициализация матриц
     for (int i = 0; i < N; i++) {
         a[i] = (float)rand() / RAND_MAX + 0.1f;
         b[i] = (float)rand() / RAND_MAX + 0.1f;
     }
     
     clock_t start = clock();
-    
-    // Операции с матрицами
+
     for (int i = 0; i < N; i++) {
         add[i] = a[i] + b[i];
         sub[i] = a[i] - b[i];
