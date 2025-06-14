@@ -30,7 +30,6 @@ int main() {
     
     float *d_a, *d_b, *d_add, *d_sub, *d_mul, *d_div;
     
-    // Инициализация матриц
     for (int i = 0; i < N; i++) {
         h_a[i] = (float)rand() / RAND_MAX + 0.1f;
         h_b[i] = (float)rand() / RAND_MAX + 0.1f;
@@ -68,11 +67,7 @@ int main() {
     float milliseconds = 0;
     cudaEventElapsedTime(&milliseconds, start, stop);
     
-    printf("First add result: %f\n", h_add[0]);
-    printf("First sub result: %f\n", h_sub[0]);
-    printf("First mul result: %f\n", h_mul[0]);
-    printf("First div result: %f\n", h_div[0]);
-    printf("Time: %f seconds\n", milliseconds / 1000.0f);
+    printf("Время: %f seconds\n", milliseconds / 1000.0f);
     
     cudaFree(d_a); cudaFree(d_b); cudaFree(d_add); cudaFree(d_sub); cudaFree(d_mul); cudaFree(d_div);
     free(h_a); free(h_b); free(h_add); free(h_sub); free(h_mul); free(h_div);
