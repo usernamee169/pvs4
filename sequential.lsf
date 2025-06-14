@@ -1,0 +1,17 @@
+#!/bin/bash
+#BSUB -J sequential_sum
+#BSUB -o output.%J
+#BSUB -e error.%J
+#BSUB -n 1
+#BSUB -R "span[ptile=1]"
+#BSUB -q normal
+#BSUB -W 00:10
+
+module load gcc
+
+# Запуск с разными размерами массивов
+for size in 100000 1000000 10000000; do
+    echo "Running with size $size"
+    ./sum_sequential $size
+    echo "---------------------------------"
+done
