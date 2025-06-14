@@ -9,8 +9,6 @@
 module load cuda/11.4
 
 echo "Матричные операции:"
-./matrix_ops_parallel 16 16
-./matrix_ops_parallel 32 8
-./matrix_ops_parallel 8 32
 ./matrix_ops_parallel 16 8
-./matrix_ops_parallel 8 16
+./matrix_ops_parallel 16 16
+./matrix_ops_parallel 16 32
