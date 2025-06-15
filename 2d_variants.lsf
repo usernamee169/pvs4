@@ -1,8 +1,7 @@
 #!/bin/bash
 #BSUB -J cuda_2d_variants
-#BSUB -q gpu
 #BSUB -n 1
-#BSUB -gpu "num=1:mode=exclusive_process"
+#BSUB -R "rusage[ngpus_excl_p=1]"
 #BSUB -o cuda_2d_variants.out
 #BSUB -e cuda_2d_variants.err
 
