@@ -1,6 +1,5 @@
 #!/bin/bash
 #BSUB -J bitonic_variants
-#BSUB -q gpu
 #BSUB -n 1
 #BSUB -R "rusage[ngpus_excl_p=1]"
 #BSUB -o bitonic_variants.out
